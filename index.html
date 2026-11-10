@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b1b">
+<title>NEON NEXUS — 3D Match Quest</title>
+<style>
+:root{--ink:#f5f7ff;--muted:#9aa8d2;--cyan:#65efff;--pink:#ff5fcf;--glass:rgba(14,20,48,.78);--stroke:rgba(150,190,255,.22)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070a17;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+body{background:radial-gradient(ellipse at 50% 5%,#20295d,#0b1026 52%,#050711)}
+button{font:inherit}#app{height:100%;display:flex;flex-direction:column;position:relative;isolation:isolate}
+#topbar{z-index:3;width:min(1100px,calc(100% - 28px));margin:12px auto 8px;padding:11px 16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;border:1px solid var(--stroke);border-radius:18px;background:var(--glass);backdrop-filter:blur(18px);box-shadow:0 12px 45px #0005}
+.brand-mini{font-size:11px;letter-spacing:.22em;font-weight:900;color:var(--cyan);white-space:nowrap}.brand-mini span{display:block;font-size:9px;color:var(--muted);letter-spacing:.18em;margin-top:3px}
+.stats{display:flex;gap:clamp(12px,3vw,30px);align-items:center}.stat{text-align:center;min-width:55px}.stat label{display:block;font-size:9px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase}.stat b{display:block;font-size:clamp(16px,2.4vw,23px);font-variant-numeric:tabular-nums;margin-top:2px}
+#score{color:#fff}#timer{color:#ffe18a}#timer.low{color:#ff6b8d;animation:blink .5s infinite alternate}@keyframes blink{to{text-shadow:0 0 18px #ff436e}}
+#roundName{text-align:right;font-size:11px;font-weight:800;letter-spacing:.12em;color:#c7d7ff}#roundName small{display:block;color:var(--muted);font-weight:500;font-size:9px;margin-top:4px}
+#progress-wrap{z-index:3;width:min(850px,calc(100% - 44px));margin:0 auto 4px;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:9px;letter-spacing:.13em}
+#progress-track{height:7px;border-radius:99px;overflow:hidden;flex:1;background:#ffffff12;border:1px solid #ffffff18}
+#progress{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#47dfff,#a88aff,#ff64ce);box-shadow:0 0 14px #67dfff;transition:width .35s}
+#arena{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 8px 12px}
+#stage{width:min( min(90vw,760px), calc(100vh - 160px));height:min( min(90vw,760px), calc(100vh - 160px));max-width:100%;position:relative}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#combo{position:absolute;z-index:2;left:50%;top:6%;transform:translate(-50%,-10px) scale(.7);opacity:0;pointer-events:none;font-weight:1000;font-size:clamp(24px,5vw,48px);font-style:italic;letter-spacing:.08em;color:#fff;text-shadow:0 0 10px #63eaff,0 0 28px #ff54d5;transition:all .22s}
+#combo.show{opacity:1;transform:translate(-50%,0) scale(1)}
+#hint{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);font-size:11px;color:#aab8dc;text-align:center;white-space:nowrap;text-shadow:0 2px 8px #000;pointer-events:none}
+#toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.12em;color:#c6d7ff;text-align:center;pointer-events:none;white-space:nowrap}
+#sound{justify-self:end;border:1px solid var(--stroke);background:#ffffff0b;color:#dce8ff;border-radius:11px;padding:7px 10px;font-size:10px;cursor:pointer}
+#overlay{display:flex;position:absolute;inset:0;z-index:10;align-items:center;justify-content:center;padding:20px;background:rgba(3,5,16,.76);backdrop-filter:blur(14px);transition:opacity .3s}
+#overlay.hidden{opacity:0;pointer-events:none}
+.panel{width:min(480px,100%);padding:clamp(24px,5vw,42px);text-align:center;border-radius:28px;border:1px solid #8aeaff55;background:linear-gradient(145deg,rgba(30,43,91,.97),rgba(9,13,34,.98));box-shadow:0 24px 100px #0009,0 0 55px #39dfff18}
+.kicker{font-size:10px;letter-spacing:.3em;color:var(--cyan);font-weight:900}
+.logo{margin:13px 0 8px;font-size:clamp(34px,8vw,58px);line-height:.98;font-weight:1000;letter-spacing:-.055em;background:linear-gradient(100deg,#fff 5%,#73efff 35%,#c38cff 65%,#ff72d5 92%);background-clip:text;color:transparent;filter:drop-shadow(0 0 18px #69ddff55)}
+.subtitle{font-size:13px;line-height:1.6;color:#b4c2e6;max-width:350px;margin:0 auto 22px}
+.features{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 24px}.chip{font-size:9px;letter-spacing:.12em;padding:7px 10px;border-radius:99px;border:1px solid #8cecff33;color:#c9eaff;background:#5bdfff0c}
+.primary{border:0;border-radius:14px;padding:14px 25px;font-size:12px;font-weight:950;letter-spacing:.12em;color:#07101f;background:linear-gradient(100deg,#63eaff,#9ef5d4 55%,#d2a0ff);box-shadow:0 8px 30px #54dfff3c;cursor:pointer;transition:transform .18s,filter .18s}
+.primary:hover{transform:translateY(-2px);filter:brightness(1.1)}.secondary{margin-top:10px;background:transparent;color:#c7d6f6;border:1px solid #8cecff55;box-shadow:none}
+#resultStats{display:flex;justify-content:center;gap:24px;margin:18px 0 24px}.result b{display:block;font-size:25px}.result span{font-size:9px;color:var(--muted);letter-spacing:.15em}
+@media(max-width:600px){#topbar{grid-template-columns:auto 1fr auto;padding:9px 10px;gap:7px}.brand-mini{font-size:9px}.brand-mini span{display:none}.stats{gap:8px;justify-content:center}.stat{min-width:44px}.stat label{font-size:8px}#roundName{font-size:9px}#sound{padding:6px 7px}#stage{width:min(96vw,calc(100vh - 145px));height:min(96vw,calc(100vh - 145px))}#hint{font-size:9px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand-mini">NEON NEXUS<span>3D MATCH QUEST</span></div>
+    <div class="stats">
+      <div class="stat"><label>Score</label><b id="score">0</b></div>
+      <div class="stat"><label>Timer</label><b id="timer">90</b></div>
+      <div class="stat"><label>Combo</label><b id="comboValue">×1</b></div>
+    </div>
+    <div id="roundName">GENESIS <small id="roundSub">ROUND 01 / 05</small></div>
+    <button id="sound" aria-label="Звук">♫ ON</button>
+  </header>
+  <div id="progress-wrap"><span>ROUND PROGRESS</span><div id="progress-track"><div id="progress"></div></div><span id="progressText">0 / 500</span></div>
+  <main id="arena">
+    <div id="stage"></div>
+    <div id="combo">COMBO!</div>
+    <div id="toast">СОБИРАЙ 3+ ФИШКИ · 4 В РЯД = БОМБА · 5 / L = ГИПЕР-КРИСТАЛЛ</div>
+    <div id="hint">Выбери фишку и соседнюю — мышью или касанием</div>
+  </main>
+  <section id="overlay">
+    <div class="panel">
+      <div class="kicker" id="overlayKicker">A NEW DIMENSION AWAITS</div>
+      <div class="logo">NEON<br>NEXUS</div>
+      <p class="subtitle" id="overlayText">Собери цепочки энергетических кристаллов, запускай каскады и пройди пять эпох. Твоя финальная цель — 10 000 очков.</p>
+      <div class="features"><span class="chip">3D CRYSTALS</span><span class="chip">CHAIN REACTIONS</span><span class="chip">POWER UPS</span></div>
+      <button class="primary" id="mainButton">НАЧАТЬ КВЕСТ</button>
+      <div id="extraButtons"></div>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+/* NEON NEXUS — single-file Match-3 prototype.
+   Внешняя зависимость только одна: Three.js с CDN. */
+const N=8, CELL=1.08, GAP=.075, STEP=CELL+GAP, W=N*STEP-GAP;
+const GOAL=10000;
+const ROUND_DEFS=[
+  {name:'GENESIS',target:500,time:90,types:5,blocks:0,bg:0x0a1230,light:0x55cfff},
+  {name:'CHROMA RIFT',target:1500,time:85,types:6,blocks:0,bg:0x1a1037,light:0xff62d2},
+  {name:'VOID GARDEN',target:4000,time:80,types:6,blocks:3,bg:0x071d28,light:0x62ffb7},
+  {name:'SOLAR TEMPLE',target:7000,time:75,types:6,blocks:5,bg:0x24152a,light:0xffb85c},
+  {name:'ECLIPSE CORE',target:GOAL,time:70,types:6,blocks:7,bg:0x100c2b,light:0xb68aff}
+];
+const COLORS=[0xff557e,0x39dfff,0xffd34e,0xa477ff,0x5af0ae,0xff914d];
+const TYPE_LABELS=['RUBY','AQUA','SOLAR','AMETHYST','JADE','AMBER'];
+const $=id=>document.getElementById(id);
+const stage=$('stage'), scene=new THREE.Scene();
+let camera,renderer,raycaster,pointer,boardRoot,board=[],tileMeshes=[],particles=[];
+let selected=null,busy=false,started=false,ended=false,endless=false,soundOn=true;
+let score=0,roundIndex=0,timeLeft=90,combo=1,comboTimer=0,clock=new THREE.Clock(),lastNow=0;
+let activeAnimations=[],ambientLight,accentLight,backgroundStars=[];
+const geometries=[];
+const audioCtx=window.AudioContext?new AudioContext():null;
+
+initThree(); showStart(); animate();
+
+function initThree(){
+  scene.background=new THREE.Color(0x0a1230);scene.fog=new THREE.FogExp2(0x080d22,.018);
+  camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(0,0,17.6);camera.lookAt(0,0,0);
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;stage.appendChild(renderer.domElement);
+  scene.add(new THREE.HemisphereLight(0xbcdcff,0x17102b,2));
+  const key=new THREE.DirectionalLight(0xffffff,3.2);key.position.set(-5,8,10);scene.add(key);
+  ambientLight=new THREE.PointLight(0x5beaff,28,28);ambientLight.position.set(-6,5,3);scene.add(ambientLight);
+  accentLight=new THREE.PointLight(0xff58c9,20,25);accentLight.position.set(6,-4,1);scene.add(accentLight);
+  boardRoot=new THREE.Group();scene.add(boardRoot);
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(W+.42,W+.42,.45),new THREE.MeshStandardMaterial({color:0x15234c,metalness:.72,roughness:.22,emissive:0x101d48,emissiveIntensity:.65}));
+  frame.position.z=-.52;boardRoot.add(frame);
+  const inner=new THREE.Mesh(new THREE.BoxGeometry(W+.22,W+.22,.16),new THREE.MeshStandardMaterial({color:0x253a70,metalness:.7,roughness:.25}));
+  inner.position.z=-.28;boardRoot.add(inner);
+  const cellGeo=new THREE.BoxGeometry(CELL,CELL,.08),cellMat=new THREE.MeshStandardMaterial({color:0x111d3e,roughness:.72,metalness:.18});
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){const p=new THREE.Mesh(cellGeo,cellMat);p.position.set(x(c),y(r),-.13);boardRoot.add(p);}
+  // Декоративные звёзды на заднем плане.
+  const starGeo=new THREE.SphereGeometry(.018,6,6),starMat=new THREE.MeshBasicMaterial({color:0x8abaff});
+  for(let i=0;i<100;i++){const s=new THREE.Mesh(starGeo,starMat);s.position.set((Math.random()-.5)*24,(Math.random()-.5)*22,-4-Math.random()*8);scene.add(s);backgroundStars.push(s);}
+  raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();
+  renderer.domElement.addEventListener('pointerdown',onPointer);
+  window.addEventListener('resize',resize);resize();
+  $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'♫ ON':'♫ OFF';if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();};
+}
+function x(c){return(c-(N-1)/2)*STEP}function y(r){return((N-1)/2-r)*STEP}
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;const vh=W+2.1,need=Math.max(vh,vh/Math.max(camera.aspect,.1));camera.position.z=Math.max(14.8,need/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)))*1.07);camera.lookAt(0,0,0);camera.updateProjectionMatrix();}
+function geometryFor(type){
+  if(geometries[type])return geometries[type];
+  let g;
+  if(type===0)g=new THREE.IcosahedronGeometry(.48,2);
+  else if(type===1)g=new THREE.SphereGeometry(.46,32,24);
+  else if(type===2)g=new THREE.TorusKnotGeometry(.29,.14,100,14,2,3);
+  else if(type===3)g=new THREE.ConeGeometry(.48,.9,6);
+  else if(type===4)g=new THREE.CylinderGeometry(.39,.39,.8,32);
+  else g=new THREE.BoxGeometry(.76,.76,.76,2,2,2);
+  geometries[type]=g;return g;
+}
+function makeMaterial(type,special){
+  return new THREE.MeshStandardMaterial({color:COLORS[type],metalness:.5,roughness:.1,emissive:COLORS[type],emissiveIntensity:special==='hyper'?.75:special==='bomb'?.42:.13});
+}
+function createTile(type,r,c,special=null){
+  const mesh=new THREE.Mesh(geometryFor(type),makeMaterial(type,special));
+  mesh.position.set(x(c),y(r),.32);mesh.rotation.set(.12,.18,Math.random()*.3);
+  mesh.userData={type,row:r,col:c,special,selected:false,phase:Math.random()*6.28};
+  if(special==='bomb'){
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.57,.045,8,32),new THREE.MeshBasicMaterial({color:0xfff09a}));
+    ring.rotation.x=Math.PI/2;ring.name='specialRing';mesh.add(ring);
+  }else if(special==='hyper'){
+    const halo=new THREE.Mesh(new THREE.IcosahedronGeometry(.62,1),new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.8}));
+    halo.name='specialHalo';mesh.add(halo);
+  }
+  boardRoot.add(mesh);tileMeshes.push(mesh);return mesh;
+}
+function removeTile(m){if(!m)return;boardRoot.remove(m);m.traverse(o=>{if(o!==m&&o.geometry)o.geometry.dispose();if(o.material&&o.material!==m.material)o.material.dispose();});m.material.dispose();tileMeshes=tileMeshes.filter(v=>v!==m);}
+function clearBoard(){for(const m of [...tileMeshes])removeTile(m);board=Array.from({length:N},()=>Array(N).fill(null));}
+function randType(){return Math.floor(Math.random()*ROUND_DEFS[Math.min(roundIndex,4)].types);}
+function generateBoard(){
+  clearBoard();
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    let t;do{t=randType();}while((c>1&&board[r][c-1]?.userData.type===t&&board[r][c-2]?.userData.type===t)||(r>1&&board[r-1][c]?.userData.type===t&&board[r-2][c]?.userData.type===t));
+    board[r][c]=createTile(t,r,c);
+  }
+  addBlockers(ROUND_DEFS[Math.min(roundIndex,4)].blocks);
+}
+function addBlockers(count){
+  // Блоки появляются на поздних эпохах в заранее свободных клетках; они не двигаются и не участвуют в совпадениях.
+  const candidates=[];for(let r=1;r<N-1;r++)for(let c=1;c<N-1;c++)candidates.push([r,c]);
+  for(let i=candidates.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[candidates[i],candidates[j]]=[candidates[j],candidates[i]];}
+  for(const [r,c] of candidates.slice(0,count)){
+    if(!board[r][c])continue;
+    removeTile(board[r][c]);
+    const block=new THREE.Mesh(new THREE.DodecahedronGeometry(.42,0),new THREE.MeshStandardMaterial({color:0x48516e,metalness:.65,roughness:.3,emissive:0x141c38}));
+    block.position.set(x(c),y(r),.22);block.userData={block:true,row:r,col:c};boardRoot.add(block);board[r][c]=block;
+  }
+}
+function isTile(m){return m&&!m.userData.block}
+function showStart(){
+  $('overlay').classList.remove('hidden');$('overlayKicker').textContent='A NEW DIMENSION AWAITS';
+  $('overlayText').textContent='Собери цепочки энергетических кристаллов, запускай каскады и пройди пять эпох. Твоя финальная цель — 10 000 очков.';
+  $('mainButton').textContent='НАЧАТЬ КВЕСТ';$('mainButton').onclick=()=>{if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();startGame();};
+  $('extraButtons').innerHTML='';
+}
+function startGame(){
+  score=0;roundIndex=0;combo=1;endless=false;started=true;ended=false;busy=false;selected=null;
+  $('overlay').classList.add('hidden');applyRound(0,true);updateHUD();generateBoard();
+}
+function applyRound(index,first=false){
+  roundIndex=index;const def=ROUND_DEFS[Math.min(index,4)];
+  timeLeft=def.time;scene.background.setHex(def.bg);scene.fog.color.setHex(def.bg);
+  ambientLight.color.setHex(def.light);accentLight.color.setHex(COLORS[(index+2)%COLORS.length]);
+  $('roundName').textContent=def.name;$('roundSub').textContent=`ROUND ${String(index+1).padStart(2,'0')} / 05`;
+  $('toast').textContent=first?'СОБИРАЙ ЦЕПОЧКИ · 4 = БОМБА · 5 / L = ГИПЕР-КРИСТАЛЛ':`ЭПОХА ${index+1}: НОВАЯ ЭНЕРГИЯ · СЛОЖНОСТЬ ВЫШЕ`;
+  updateHUD();
+}
+function updateHUD(){
+  $('score').textContent=score.toLocaleString('ru-RU');$('timer').textContent=Math.ceil(timeLeft);
+  $('timer').classList.toggle('low',timeLeft<15);$('comboValue').textContent='×'+combo;
+  const def=ROUND_DEFS[Math.min(roundIndex,4)],prev=roundIndex?ROUND_DEFS[roundIndex-1].target:0;
+  const target=endless?score+1000:def.target;
+  const pct=endless?((score-prev)%1000)/1000:Math.max(0,Math.min(100,(score-prev)/(target-prev)*100));
+  $('progress').style.width=pct+'%';$('progressText').textContent=`${score.toLocaleString('ru-RU')} / ${endless?'∞':target.toLocaleString('ru-RU')}`;
+}
+function onPointer(e){
+  if(!started||ended||busy)return;
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=(e.clientX-rect.left)/rect.width*2-1;pointer.y=-((e.clientY-rect.top)/rect.height*2-1);
+  raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(tileMeshes,false)[0];if(!hit)return;
+  const m=hit.object;if(!isTile(m))return;selectCell(m.userData.row,m.userData.col);
+}
+function selectCell(r,c){
+  if(!selected){selected={r,c};board[r][c].userData.selected=true;return;}
+  const a=selected;board[a.r][a.c].userData.selected=false;selected=null;
+  if(a.r===r&&a.c===c)return;
+  if(Math.abs(a.r-r)+Math.abs(a.c-c)!==1){selected={r,c};board[r][c].userData.selected=true;return;}
+  performMove(a.r,a.c,r,c);
+}
+async function performMove(r1,c1,r2,c2){
+  busy=true;const a=board[r1][c1],b=board[r2][c2];
+  // Гипер-кристалл активируется обменом с любой соседней фишкой: очищает весь цвет второй фишки.
+  if(a.userData.special==='hyper'||b.userData.special==='hyper'){
+    const hyper=a.userData.special==='hyper'?a:b,other=hyper===a?b:a;
+    await swap(r1,c1,r2,c2);
+    const blast=new Set([hyper,...tileMeshes.filter(m=>isTile(m)&&m.userData.type===other.userData.type)]);
+    await resolve(blast,null,true);busy=false;return;
+  }
+  await swap(r1,c1,r2,c2);
+  const result=findMatches();
+  if(!result.cells.size){
+    await swap(r1,c1,r2,c2);playTone(160,.07,'sawtooth');busy=false;return;
+  }
+  combo=1;comboTimer=0;await resolve(result.cells,result.anchor,false,result);
+  busy=false;
+}
+function swap(r1,c1,r2,c2){
+  const a=board[r1][c1],b=board[r2][c2];board[r1][c1]=b;board[r2][c2]=a;
+  [[a.userData.row,a.userData.col],[b.userData.row,b.userData.col]]=[[r2,c2],[r1,c1]];
+  const ap=a.position.clone(),bp=b.position.clone(),ae=new THREE.Vector3(x(c2),y(r2),.32),be=new THREE.Vector3(x(c1),y(r1),.32);
+  return tween(190,t=>{const e=t*t*(3-2*t);a.position.lerpVectors(ap,ae,e);b.position.lerpVectors(bp,be,e);a.position.z+=Math.sin(t*Math.PI)*.2;b.position.z+=Math.sin(t*Math.PI)*.2;}).then(()=>{a.position.copy(ae);b.position.copy(be);});
+}
+function findMatches(){
+  // Находим горизонтальные и вертикальные линии, объединяем пересечения в компоненты.
+  const cells=new Set(),runs=[];let anchor=null;
+  for(let r=0;r<N;r++){let c=0;while(c<N){const m=board[r][c];if(!isTile(m)){c++;continue;}let e=c+1;while(e<N&&isTile(board[r][e])&&board[r][e].userData.type===m.userData.type)e++;if(e-c>=3){const run=[];for(let k=c;k<e;k++){run.push(board[r][k]);cells.add(board[r][k]);}runs.push(run);if(e-c>=4)anchor=board[r][Math.floor((c+e-1)/2)];}c=e;}}
+  for(let c=0;c<N;c++){let r=0;while(r<N){const m=board[r][c];if(!isTile(m)){r++;continue;}let e=r+1;while(e<N&&isTile(board[e][c])&&board[e][c].userData.type===m.userData.type)e++;if(e-r>=3){const run=[];for(let k=r;k<e;k++){run.push(board[k][c]);cells.add(board[k][c]);}runs.push(run);if(e-r>=4)anchor=board[Math.floor((r+e-1)/2)][c];}r=e;}}
+  // Г-образные / Т-образные группы: связная компонента одного цвета размером от 5 — гипер-кристалл.
+  let hyperGroup=null;
+  for(const seed of cells){if(!isTile(seed))continue;const comp=new Set([seed]),stack=[seed],type=seed.userData.type;while(stack.length){const m=stack.pop(),r=m.userData.row,c=m.userData.col;for(const [nr,nc] of [[r-1,c],[r+1,c],[r,c-1],[r,c+1]]){const n=board[nr]?.[nc];if(isTile(n)&&n.userData.type===type&&cells.has(n)&&!comp.has(n)){comp.add(n);stack.push(n);}}}if(comp.size>=5){hyperGroup=comp;anchor=[...comp][Math.floor(comp.size/2)];break;}}
+  const maxRun=Math.max(0,...runs.map(v=>v.length));
+  return {cells,runs,anchor,special:hyperGroup?'hyper':maxRun>=4?'bomb':null};
+}
+function expandBlast(seedSet){
+  // Бомба взрывает квадрат 3×3 вокруг себя; цепные бомбы тоже активируются.
+  const result=new Set(seedSet),queue=[...seedSet];
+  while(queue.length){const m=queue.pop();if(!isTile(m)||m.userData.special!=='bomb')continue;const r=m.userData.row,c=m.userData.col;
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const n=board[r+dr]?.[c+dc];if(isTile(n)&&!result.has(n)){result.add(n);queue.push(n);}}
+  }
+  return result;
+}
+async function resolve(seed,anchor,hyperActivation=false,matchInfo=null){
+  let current=seed,chain=0;
+  while(current&&current.size){
+    chain++;combo=Math.min(9,chain);$('comboValue').textContent='×'+combo;
+    if(chain>1){$('combo').classList.add('show');$('combo').textContent=`COMBO ×${combo}`;playTone(420+chain*90,.12,'triangle');}
+    const exploded=expandBlast(current);
+    let keep=null,specialType=null;
+    if(!hyperActivation&&chain===1&&matchInfo?.special&&anchor&&exploded.has(anchor)){
+      keep=anchor;specialType=matchInfo.special;
+    }
+    // Очки считаются по реально уничтожаемым фишкам с каскадным множителем.
+    const victims=[...exploded].filter(m=>m!==keep&&isTile(m));
+    score+=victims.length*10*combo;updateHUD();
+    for(const m of victims)spawnBurst(m.position,m.userData.type,7);
+    playTone(260+Math.min(victims.length,12)*22,.1,'sine');
+    await tween(260,t=>{const s=Math.max(.001,1-t);for(const m of victims)m.scale.setScalar(s);});
+    for(const m of victims){const r=m.userData.row,c=m.userData.col;if(board[r]?.[c]===m)board[r][c]=null;removeTile(m);}
+    if(keep){
+      keep.userData.special=specialType;keep.material.emissiveIntensity=specialType==='hyper'?.9:.65;
+      keep.scale.setScalar(1);keep.userData.selected=false;
+      if(specialType==='hyper')keep.add(new THREE.Mesh(new THREE.IcosahedronGeometry(.62,1),new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.85})));
+      else {const ring=new THREE.Mesh(new THREE.TorusGeometry(.58,.05,8,32),new THREE.MeshBasicMaterial({color:0xfff2a0}));ring.rotation.x=Math.PI/2;keep.add(ring);}
+    }
+    await gravityRefill();
+    const next=findMatches();current=next.cells;anchor=next.anchor;matchInfo=next;hyperActivation=false;
+  }
+  comboTimer=1.2;
+  checkProgress();
+}
+async function gravityRefill(){
+  // Гравитация обрабатывает каждый столбец отдельно: блоки делят столбец на сегменты.
+  const moves=[];
+  for(let c=0;c<N;c++){
+    let bottom=N-1;
+    for(let r=N-1;r>=0;r--){
+      if(board[r][c]?.userData.block){bottom=r-1;continue;}
+      if(!board[r][c])continue;
+      const m=board[r][c];let target=bottom;
+      while(target>r&&board[target][c]?.userData.block)target--;
+      if(target!==r){board[target][c]=m;board[r][c]=null;m.userData.row=target;moves.push({m,from:m.position.clone(),to:new THREE.Vector3(x(c),y(target),.32),dist:target-r});}
+      bottom=target-1;
+    }
+    // Заполняем пустые клетки сверху каждого сегмента до ближайшего блока.
+    let r=0;
+    while(r<N){
+      if(board[r][c]?.userData.block){r++;continue;}
+      let end=r;while(end<N&&!board[end][c]?.userData.block)end++;
+      let write=end-1;
+      for(let k=end-1;k>=r;k--)if(board[k][c])write--;
+      for(let k=write;k>=r;k--){const m=createTile(randType(),k,c);m.position.y=y(r)-STEP*(write-k+1);board[k][c]=m;moves.push({m,from:m.position.clone(),to:new THREE.Vector3(x(c),y(k),.32),dist:write-k+1});}
+      r=end;
+    }
+  }
+  if(!moves.length)return;
+  const max=Math.max(...moves.map(m=>m.dist));
+  await tween(190+max*48,t=>{for(const a of moves){const local=Math.min(1,t*(190+max*48)/(190+a.dist*48));const e=1-Math.pow(1-local,3);a.m.position.lerpVectors(a.from,a.to,e);a.m.position.y+=local>.83?Math.sin((local-.83)/.17*Math.PI)*.07:0;}});
+  for(const a of moves)a.m.position.copy(a.to);
+}
+function spawnBurst(pos,type,count){
+  for(let i=0;i<count;i++){
+    const mat=new THREE.MeshBasicMaterial({color:COLORS[type],transparent:true,opacity:1});
+    const p=new THREE.Mesh(new THREE.BoxGeometry(.045+Math.random()*.055,.045+Math.random()*.055,.045+Math.random()*.055),mat);
+    p.position.copy(pos);scene.add(p);particles.push({mesh:p,life:.45+Math.random()*.5,age:0,vel:new THREE.Vector3((Math.random()-.5)*4,(Math.random()-.5)*4,(Math.random()-.5)*2)});
+  }
+}
+function spawnFireworks(){
+  for(let i=0;i<16;i++){const color=COLORS[i%COLORS.length];const center=new THREE.Vector3((Math.random()-.5)*8,(Math.random()-.5)*7,0);for(let j=0;j<20;j++){const m=new THREE.Mesh(new THREE.SphereGeometry(.035,6,6),new THREE.MeshBasicMaterial({color}));m.position.copy(center);scene.add(m);particles.push({mesh:m,life:1.4+Math.random(),age:0,vel:new THREE.Vector3((Math.random()-.5)*5,(Math.random()-.5)*5,(Math.random()-.5)*2)});}}
+}
+function tween(ms,fn){return new Promise(resolve=>activeAnimations.push({start:performance.now(),ms,fn,resolve}));}
+function playTone(freq,duration,type='sine'){
+  if(!soundOn||!audioCtx)return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.045,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration);}catch(e){}
+}
+function checkProgress(){
+  if(endless)return;
+  // Один большой каскад теоретически может пересечь сразу несколько порогов.
+  // Поэтому последовательно активируем все достигнутые эпохи, не теряя прогресс.
+  while(!ended && score>=ROUND_DEFS[roundIndex].target){
+    if(score>=GOAL){winGame();return;}
+    const next=roundIndex+1;
+    applyRound(next);
+    generateBoard();
+    spawnBurst(new THREE.Vector3(0,0,0),next%COLORS.length,30);
+    playTone(700+next*70,.3,'triangle');
+  }
+}
+function winGame(){
+  ended=true;busy=true;spawnFireworks();showEnd(true);
+}
+function showEnd(victory){
+  $('overlay').classList.remove('hidden');
+  $('overlayKicker').textContent=victory?'NEXUS RESTORED · VICTORY':'SIGNAL LOST · GAME OVER';
+  $('overlayText').textContent=victory?'Ты объединил все эпохи и достиг абсолютной энергии. Вселенная NEON NEXUS покорена.':'Время раунда истекло. Перезаряди кристаллы и попробуй пройти дальше.';
+  $('mainButton').textContent=victory?'БЕСКОНЕЧНЫЙ РЕЖИМ':'ПОПРОБОВАТЬ СНОВА';
+  $('mainButton').onclick=()=>{if(victory){endless=true;ended=false;busy=false;started=true;timeLeft=999999;roundIndex=4;applyRound(4);generateBoard();$('overlay').classList.add('hidden');$('roundName').textContent='ENDLESS';$('roundSub').textContent='SURVIVAL MODE';}else startGame();};
+  $('extraButtons').innerHTML=`<div id="resultStats"><div class="result"><b>${score.toLocaleString('ru-RU')}</b><span>FINAL SCORE</span></div><div class="result"><b>${roundIndex+1}/5</b><span>ERAS CLEARED</span></div></div>`;
+}
+function endGame(){if(ended)return;ended=true;busy=true;playTone(110,.5,'sawtooth');showEnd(false);}
+function animate(){
+  requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),now=performance.now();
+  for(let i=activeAnimations.length-1;i>=0;i--){const a=activeAnimations[i],t=Math.min(1,(now-a.start)/a.ms);a.fn(t);if(t>=1){activeAnimations.splice(i,1);a.resolve();}}
+  if(started&&!ended&&!endless){timeLeft-=dt;if(timeLeft<=0){timeLeft=0;$('timer').textContent='0';endGame();}else{$('timer').textContent=Math.ceil(timeLeft);$('timer').classList.toggle('low',timeLeft<15);}}
+  if(comboTimer>0){comboTimer-=dt;if(comboTimer<=0){combo=1;$('comboValue').textContent='×1';$('combo').classList.remove('show');}}
+  for(const m of tileMeshes){const d=m.userData;if(d.selected){m.rotation.z=Math.sin(now*.006+d.phase)*.12;m.scale.setScalar(1.08+Math.sin(now*.009)*.055);}else{m.rotation.y+=dt*.28;if(d.special==='bomb'){m.scale.setScalar(1+Math.sin(now*.009+d.phase)*.055);}if(d.special==='hyper'){m.rotation.x+=dt*.65;m.rotation.z+=dt*.4;}}}
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.age+=dt;p.mesh.position.addScaledVector(p.vel,dt);p.vel.y-=dt*1.7;p.mesh.material.opacity=Math.max(0,1-p.age/p.life);p.mesh.scale.setScalar(Math.max(.001,1-p.age/p.life));if(p.age>=p.life){scene.remove(p.mesh);p.mesh.geometry.dispose();p.mesh.material.dispose();particles.splice(i,1);}}
+  for(let i=0;i<backgroundStars.length;i++)backgroundStars[i].position.y+=Math.sin(now*.0002+i)*.0002;
+  renderer.render(scene,camera);
+}
+</script>
+</body>
+</html>
